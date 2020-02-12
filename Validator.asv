@@ -1,4 +1,16 @@
 classdef Validator < handle
+    % Possible rules 
+    % numeric   : Must be a number
+    % string    : Must be of type string
+    % char      : Must be of type char
+    % required  : Must not be empty
+    % regex     : Must match regex
+    % not_regex : Must not match regex
+    % contains  : Must be string/char, and contain a certain word
+    % min       : Min value for a number, or string/char length
+    % max       : Max value for a number, or string/char length
+    %
+    % Example : 'min:5|contains'
     
     methods(Static)
         function passedRules = validate(value, rules)
@@ -33,9 +45,9 @@ classdef Validator < handle
                     expression = split(rule, ':');
                     passedRules = ~regex_match(value, expression);
                     
-                elseif strcmp(rule, 'contains')
-                    word = split(rule, ':');
-                    passedRules = isscontains(value, word);
+                elseif startsWith(rule, 'contains')
+                    word = spllit(rule, ':');
+                    passedRules = (isstring(value) || ischar(value)) && contains(value, word{2});
                     
                 elseif startsWith(rule, 'min')
                     min = split(rule, ':');

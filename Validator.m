@@ -1,4 +1,17 @@
 classdef Validator < handle
+    % Possible rules delimited by '|'
+    % numeric   : Must be a number
+    % string    : Must be of type string
+    % char      : Must be of type char
+    % required  : Must not be empty
+    % optional  : Nullable, but checked when other rules are provided
+    % regex     : Must match regex
+    % not_regex : Must not match regex
+    % contains  : Must be string/char, and contain a certain word
+    % min       : Min value for a number, or string/char length
+    % max       : Max value for a number, or string/char length
+    %
+    % Example : 'min:5|contains:text'
     
     methods(Static)
         function passedRules = validate(value, rules)
@@ -35,25 +48,28 @@ classdef Validator < handle
                     
                 elseif startsWith(rule, 'contains')
                     word = spllit(rule, ':');
-                    passedRules = (isstring(value) || ischar(value)) && contains(value, word{2});
+                    word = word{2};
+                    passedRules = (isstring(value) || ischar(value)) && contains(value, word);
                     
                 elseif startsWith(rule, 'min')
                     min = split(rule, ':');
+                    min = min{2};
                     
                     if ischar(value) || isstring(value)
-                        passedRules = strlength(value) >= str2num(min{2});
+                        passedRules = strlength(value) >= str2double(min);
                     elseif isnumeric(value)
-                        passedRules = value >= str2num(min{2});
+                        passedRules = value >= str2double(min);
                     else
                         passedRules = false;
                     end
                 elseif startsWith(rule, 'max')
                     max = split(rule, ':');
+                    max = max{2};
                     
                     if ischar(value) || isstring(value)
-                        passedRules = strlength(value) <= str2num(max{2});
+                        passedRules = strlength(value) <= str2double(max);
                     elseif isnumeric(value)
-                        passedRules = value <= str2num(max{2});
+                        passedRules = value <= str2double(max);
                     else
                         passedRules = false;
                     end
