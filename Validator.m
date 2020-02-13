@@ -13,75 +13,119 @@ classdef Validator < handle
     %
     % Example : 'min:5|contains:text'
     
-    methods(Static)
-        function passedRules = validate(value, rules)
-            % Only continue if optional field has rules when not empty
-            if contains(rules, 'optional') && isempty(value)
-                return
-            end
-            
-            rules = split(rules, '|');
+    methods (Static)
+        function [passedRules, failedRule] = validate(value, rules)
             passedRules = true;
+            functionHandles = containers.Map({
+                'numeric'
+                'string'
+                'char'
+                'required'
+                'regex'
+                'notRegex'
+                'contains'
+                'min'
+                'max'
+            }, {
+                @isNumeric
+                @isString
+                @isChar
+                @notEmpty
+                @regex
+                @notRegex
+                @strContains
+                @min
+                @max
+            });
+        
+            rules = split(rules, '|');
             
             for i = 1:numel(rules)
                 rule = rules{i};
                 
-                if strcmp(rule, 'numeric')
-                    passedRules = isnumeric(value);
-                    
-                elseif strcmp(rule, 'string')
-                    passedRules = isstring(value);
-                    
-                elseif strcmp(rule, 'char')
-                    passedRules = ischar(value);
-                    
-                elseif strcmp(rule, 'required')
-                    passedRules = ~isempty(value);
-                    
-                elseif strcmp(rule, 'regex')
-                    expression = split(rule, ':');
-                    passedRules = regex_match(value, expression);
-                    
-                elseif strcmp(rule, 'not_regex')
-                    expression = split(rule, ':');
-                    passedRules = ~regex_match(value, expression);
-                    
-                elseif startsWith(rule, 'contains')
-                    word = spllit(rule, ':');
-                    word = word{2};
-                    passedRules = (isstring(value) || ischar(value)) && contains(value, word);
-                    
-                elseif startsWith(rule, 'min')
-                    min = split(rule, ':');
-                    min = min{2};
-                    
-                    if ischar(value) || isstring(value)
-                        passedRules = strlength(value) >= str2double(min);
-                    elseif isnumeric(value)
-                        passedRules = value >= str2double(min);
+                % Only continue if optional field has rules when not empty
+                if isequal(rule, 'optional')
+                    if isempty(value)
+                        return
                     else
-                        passedRules = false;
-                    end
-                elseif startsWith(rule, 'max')
-                    max = split(rule, ':');
-                    max = max{2};
-                    
-                    if ischar(value) || isstring(value)
-                        passedRules = strlength(value) <= str2double(max);
-                    elseif isnumeric(value)
-                        passedRules = value <= str2double(max);
-                    else
-                        passedRules = false;
+                        continue
                     end
                 end
                 
-                % End if any rule doesnt pass
+                % Handle rules like 'min:5'
+                if contains(rule, ':')
+                    specialRule = split(rule, ':');
+                    rule = specialRule{1};
+                    param = specialRule{2};
+                    
+                    functionHandle = functionHandles(rule);
+                    passedRules = functionHandle(value, param);
+                % Handle normal rules like 'numeric'
+                else
+                    functionHandle = functionHandles(rule);
+                    passedRules = functionHandle(value);
+                end
+                
+                % Exit if any rules fail, and replay with failed rule
                 if ~passedRules
+                    failedRule = rule;
                     return
                 end
             end
         end
     end
-    
 end
 
+% 
+% Functions able to be called from validate()
+%
+function passed = isNumeric(value)
+    passed = isnumeric(value);
+end
+
+function passed = isString(value)
+    passed = isstring(value);
+end
+
+function passed = isChar(value)
+    passed = ischar(value);
+end
+
+function passed = notEmpty(value)
+    passed = ~isempty(value);
+end
+
+function passed = regex(value)
+    expression = split(rule, ':');
+    passed = regex_match(value, expression);
+end
+
+function passed = notRegex(value)
+    expression = split(rule, ':');
+    passed = ~regex_match(value, expression);
+end
+
+function passed = strContains(value)     
+    word = split(rule, ':');
+    passed = (isstring(value) || ischar(value)) && contains(value, word{2});
+end
+
+function passed = min(value, min)
+    passed = false;
+    
+    if ischar(value) || isstring(value)
+        passed = strlength(value) >= str2double(min);
+    elseif isnumeric(value)
+        passed = value >= str2double(min);
+    end
+end
+
+function passed = max(value, max)
+    passed = false;
+
+    if ischar(value) || isstring(value)
+        passed = strlength(value) <= str2double(max);
+    elseif isnumeric(value)
+        passed = value <= str2double(max);
+    end
+end

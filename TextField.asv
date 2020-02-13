@@ -1,0 +1,36 @@
+classdef TextField < CustomGuiInterface
+    methods
+        function obj = TextField()
+            obj.uiInstance = annotation('textbox');
+        end
+        
+        function obj = setBackgroundColor(obj, color)
+            
+        end
+        
+        function obj = setText(obj, text)
+            obj.String = text;
+        end
+        
+        function obj = setFontColor(obj, color)
+            obj.FontColor = color;
+        end
+        
+        function obj = setFontName(obj, fontName)
+            obj.FontName = fontName;
+        end
+        
+        function obj = setFontWeight(obj, weight)
+            obj.FontWeight = weight;
+        end
+        
+        function obj = setFontAngle(obj, angle)
+            obj.FontAngle = angle;
+        end
+        
+        function obj = setFontSize(obj, size)
+            obj.FontSize = size;
+        end
+    end
+end
+

@@ -1,21 +1,23 @@
-classdef Label < CustomGuiInterface
-    properties
-        enabled
+classdef TextArea < handle & CustomGuiInterface
+    events
+        ValueChangeEvent
     end
     
     methods
-        function obj = Label()
-            obj.uiInstance = uilabel();
-        end
-        %
-        % Setters for all Label properties
-        %
-        function obj = setText(obj, text)
-            obj.uiInstance.Text = text;
+        function obj = TextArea()
+            obj.uiInstance = uitextarea();
+            obj.uiInstance.ValueChangedFcn = @(textarea, event) obj.textChangeCallback();
         end
         
+        %
+        % Setters for all TextField properties
+        %
         function obj = setBackgroundColor(obj, color)
             obj.uiInstance.BackgroundColor = color;
+        end
+        
+        function obj = setText(obj, text)
+            obj.uiInstance.String = text;
         end
         
         function obj = setFontColor(obj, color)
@@ -38,8 +40,14 @@ classdef Label < CustomGuiInterface
             obj.uiInstance.FontSize = size;
         end
         
-        function obj = setEnabled(obj, isEnabled)
-            obj.uiInstance.uiInstance.Enable = isEnabled;
+        function obj = addValueChangeListener(obj, callbackHandle)
+            addlistener(obj, 'ValueChangeEvent', callbackHandle)
+        end
+    end
+    
+    methods (Access = private)
+        function obj = textChangeCallback(obj)
+            notify(obj, 'ValueChangeEvent');
         end
     end
 end
